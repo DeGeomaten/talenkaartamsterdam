@@ -180,8 +180,8 @@
 
     map.on("load", async () => {
       const [geojsonRes, locatiesRes] = await Promise.all([
-        fetch("/stadsdelen.json"),
-        fetch("/locaties.json"),
+        fetch("./stadsdelen.json"),
+        fetch("./locaties.json"),
       ]);
       const geojson: GeoJSON.FeatureCollection = await geojsonRes.json();
       const scholen: {
