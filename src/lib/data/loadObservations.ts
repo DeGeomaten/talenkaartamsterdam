@@ -1,8 +1,8 @@
 import * as XLSX from "xlsx";
 
-const SPREADSHEET_URL = "/Multilingual_Amsterdam_voorGees.xlsx";
-const SPEADSHEET_URL2 = "/School_data.xlsx";
-const ISO_CODES_URL = "/iso_codes.json";
+const SPREADSHEET_URL = "./Multilingual_Amsterdam_voorGees.xlsx";
+const SPEADSHEET_URL2 = "./School_data.xlsx";
+const ISO_CODES_URL = "./iso_codes.json";
 
 let isoCodes: { code: string; NL: string; EN: string }[] = [];
 
