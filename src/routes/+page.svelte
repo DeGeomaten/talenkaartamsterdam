@@ -737,7 +737,7 @@
               </span>
 
               {#if showLangStatistics}
-                <ul class="text-xs text-gray-500 mt-1 ml-4">
+                <ul class="text-[13px] text-gray-500 mt-1 ml-4">
                   {#if !languageFilters.homeLanguage && !languageFilters.proficient}
                     <li>
                       {locale === "nl" ? `Vloeiend` : `Fluent`}
