@@ -26,7 +26,7 @@ export type RespondentLanguage = {
 }
 
 export async function loadData(locale: "nl" | "en" = "nl") {
-    const res = await fetch("./talenkaart_data.xlsx");
+    const res = await fetch("./TALENKAART_DATA/talenkaart_data.xlsx");
     const buffer = await res.arrayBuffer();
     const workbook = XLSX.read(buffer);
 

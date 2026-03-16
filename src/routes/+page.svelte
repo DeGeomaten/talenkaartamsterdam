@@ -28,6 +28,7 @@
     type RespondentLanguage,
     type Locatie,
   } from "$lib/data/loadRespondents";
+  import Button from "$lib/components/ui/button/button.svelte";
 
   type Stadsdeel = {
     id: number;
@@ -517,6 +518,8 @@
       map?.remove();
     };
   });
+
+  let showLangStatistics = $state(true);
 </script>
 
 <ModeWatcher />
@@ -547,16 +550,19 @@
         <li class="p-0.5">
           <Checkbox bind:checked={showStadsdelen} class="inline mr-2"
           ></Checkbox>
-          <span style:color="green">--</span> Stadsdelen
+          <span style:color="#44ff44">--</span>
+          {locale === "nl" ? `Stadsdelen` : `Districts`}
         </li>
         <li class="p-0.5">
           <Checkbox bind:checked={showScholen} class="inline mr-2"></Checkbox>
-          <span style:color="red">●</span> Scholen
+          <span style:color="#ff4444">●</span>
+          {locale === "nl" ? `Scholen` : `Schools`}
         </li>
         <li class="p-0.5">
           <Checkbox bind:checked={showBibliotheken} class="inline mr-2"
           ></Checkbox>
-          <span style:color="blue">●</span> Bibliotheken
+          <span style:color="#4444ff">●</span>
+          {locale === "nl" ? `Bibliotheken` : `Libraries`}
         </li>
       </ul>
     </div>
@@ -636,7 +642,9 @@
         >
         {#if !selectedStadsdeelId && !selectedLocatieId}
           <span class="opacity-50 text-lg"
-            >&rarr; Selecteer een stadsdeel of locatie op de kaart...</span
+            >&rarr; {locale === "nl"
+              ? `Selecteer een stadsdeel of locatie op de kaart...`
+              : `Select a district or location on the map...`}</span
           >
         {/if}
         {#if selectedStadsdeelId}
@@ -704,45 +712,58 @@
 
             <li class="p-2 odd:bg-gray-500/10 rounded-lg">
               <Checkbox class="inline mr-1" />
-              <span class="underline"
+              <span
+                class="underline cursor-pointer"
+                onclick={() => (showLangStatistics = !showLangStatistics)}
                 >{locale === "nl"
                   ? langs[code].nameNL
                   : langs[code].nameEN},</span
               >
               <span class="text-sm">
                 {count}
-                {count > 1 ? "sprekers" : "spreker"}
+                {locale === "nl"
+                  ? count > 1
+                    ? "sprekers"
+                    : "spreker"
+                  : count > 1
+                    ? "speakers"
+                    : "speaker"}
                 <b>({((count / res.length) * 100).toFixed(1)}%)</b>
               </span>
 
-              <ul class="text-xs text-gray-500 mt-1 ml-4">
-                {#if !languageFilters.homeLanguage && !languageFilters.proficient}
-                  <li>
-                    Vloeiend ({o.proficient}x) ({(
-                      (o.proficient / o.total) *
-                      100
-                    ).toFixed(1)}%)
-                  </li>
-                  <li>
-                    Thuistaal ({o.homeLanguage}x) ({(
-                      (o.homeLanguage / o.total) *
-                      100
-                    ).toFixed(1)}%)
-                  </li>
-                {/if}
-                {#if topCooc.length > 0}
-                  {#each topCooc as [coocCode, coocCount]}
+              {#if showLangStatistics}
+                <ul class="text-xs text-gray-500 mt-1 ml-4">
+                  {#if !languageFilters.homeLanguage && !languageFilters.proficient}
                     <li>
-                      + {locale === "nl"
-                        ? langs[coocCode]?.nameNL
-                        : langs[coocCode]?.nameEN}
-                      ({coocCount}x) ({((coocCount / res.length) * 100).toFixed(
-                        1,
-                      )}%)
+                      {locale === "nl" ? `Vloeiend` : `Fluent`}
+                      ({o.proficient}x) ({(
+                        (o.proficient / o.total) *
+                        100
+                      ).toFixed(1)}%)
                     </li>
-                  {/each}
-                {/if}
-              </ul>
+                    <li>
+                      {locale === "nl" ? `Thuistaal` : `Home language`}
+                      ({o.homeLanguage}x) ({(
+                        (o.homeLanguage / o.total) *
+                        100
+                      ).toFixed(1)}%)
+                    </li>
+                  {/if}
+                  {#if topCooc.length > 0}
+                    {#each topCooc as [coocCode, coocCount]}
+                      <li>
+                        + {locale === "nl"
+                          ? langs[coocCode]?.nameNL
+                          : langs[coocCode]?.nameEN}
+                        ({coocCount}x) ({(
+                          (coocCount / res.length) *
+                          100
+                        ).toFixed(1)}%)
+                      </li>
+                    {/each}
+                  {/if}
+                </ul>
+              {/if}
             </li>
           {/each}
         </ul>
@@ -781,7 +802,7 @@
 
   :global(.school-label-permanent) {
     font-family: "Bebas Neue", serif;
-    font-size: 11px;
+    font-size: 12px;
     color: #331100;
     background: rgba(255, 255, 255, 0.85);
     padding: 0px 3px;
