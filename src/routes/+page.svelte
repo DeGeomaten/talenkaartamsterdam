@@ -636,7 +636,7 @@
   <Card class="m-4 sm:m-8 p-0 relative">
     <div
       bind:this={mapContainer}
-      class="w-full h-[400px] sm:h-[600px] rounded-lg"
+      class="w-full h-[400px] md:h-[600px] rounded-lg"
     ></div>
     <div
       class="absolute bottom-4 left-4 bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md"
