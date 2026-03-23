@@ -740,27 +740,32 @@
               class="inline size-4 opacity-50 cursor-pointer mr-1"
             ></X>
             {#if !langCombination.length}
-              Geen van de
+              {locale == "nl" ? `Geen van de ` : `None of the `}
             {:else}
-              <span class="underline">{langCombination.length}</span> van de
+              <span class="underline">{langCombination.length}</span>
+              {locale == "nl" ? `van de` : `of the`}
             {/if}
-            ondervraagden (<b class="text-sm"
-              >{((langCombination.length / filteredRes.length) * 100).toFixed(
-                1,
-              )}%</b
-            >) spreken
+            {locale == "nl" ? `ondervraagden ` : `respondents `}
+            {#if langCombination.length}
+              (<b class="text-sm"
+                >{((langCombination.length / filteredRes.length) * 100).toFixed(
+                  1,
+                )}%</b
+              >)
+            {/if}
+            {locale == "nl" ? `spreken` : `speak`}
             {#if langNames.length > 1}
               {@html langNames.slice(0, -1).join(", ") +
-                " <b>en</b> " +
+                (locale == "nl" ? " <b>en</b> " : " <b>and</b> ") +
                 langNames.slice(-1)[0]}
             {:else}
               {langNames[0]}
             {/if}
-            <!-- Nog naar Engels!! -->
           </div>
         {:else}
-          <div class="bg-gray-500/10 p-2 rounded-lg">
-            Selecteer meerdere talen om
+          <div class="bg-gray-500/10 p-2 text-sm text-gray-300 rounded-lg">
+            Selecteer één of meerdere talen om te zien hoeveel ondervraagden
+            deze combinatie spreken
           </div>
         {/if}
         <ul>
@@ -853,6 +858,14 @@
   <a class="underline" href="https://github.com/talenkaart/talenkaartamsterdam"
     >GitHub repository &rarr;</a
   >
+  <br />
+  <a
+    class="underline"
+    href="https://creativecommons.org/licenses/by/4.0/deed.nl"
+  >
+    CC BY 4.0
+  </a>
+  · © 2025, Universiteit van Amsterdam
 </footer>
 
 <style>
