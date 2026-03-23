@@ -12,6 +12,7 @@
 
   let mapContainer: HTMLDivElement | undefined = $state();
   let map: maplibregl.Map | undefined;
+  let mapLoaded: boolean = $state(false);
   let schoolLabelMarker: maplibregl.Marker | undefined;
 
   import {
@@ -180,30 +181,32 @@
   }
 
   $effect(() => {
-    console.log(showScholen);
-    map?.setLayoutProperty(
-      "locatie-circles",
-      "visibility",
-      showScholen ? "visible" : "none",
-    );
+    if (!mapLoaded) return;
+
+    const visibility = showStadsdelen ? "visible" : "none";
+
+    map!.setLayoutProperty("stadsdelen-fill", "visibility", visibility);
+    map!.setLayoutProperty("stadsdelen-outline", "visibility", visibility);
+
+    stadsdeelMarkers.forEach((marker) => {
+      const el = marker.getElement();
+      el.style.display = showStadsdelen ? "block" : "none";
+    });
   });
 
   $effect(() => {
-    console.log(showStadsdelen);
-    map?.setLayoutProperty(
-      "stadsdelen-fill",
-      "visibility",
-      showStadsdelen ? "visible" : "none",
-    );
-    map?.setLayoutProperty(
-      "stadsdelen-outline",
-      "visibility",
-      showStadsdelen ? "visible" : "none",
-    );
-  });
+    if (!mapLoaded) return;
 
-  $effect(() => {
-    const selectedStadsdeel = stadsdelen.find(
+    const typeFilter = ["any"];
+    if (showScholen) typeFilter.push(["==", ["get", "type"], "school"]);
+    if (showBibliotheken)
+      typeFilter.push(["==", ["get", "type"], "bibliotheek"]);
+
+    const finalFilter =
+      typeFilter.length > 1 ? typeFilter : ["==", ["get", "id"], -1];
+    map!.setFilter("locatie-circles", finalFilter);
+
+    const currentStadsdeel = stadsdelen.find(
       (s) => s.id === selectedStadsdeelId,
     );
 
@@ -211,11 +214,19 @@
       const l = locaties[index];
       const el = marker.getElement();
 
+      const typeIsVisible =
+        (l.type === "school" && showScholen) ||
+        (l.type === "bibliotheek" && showBibliotheken);
+
+      let selectionMatch = false;
       if (selectedLocatieId !== null) {
-        el.style.display = l.id === selectedLocatieId ? "block" : "none";
+        selectionMatch = l.id === selectedLocatieId;
       } else if (selectedStadsdeelId !== null) {
-        el.style.display =
-          l.stadsdeel === selectedStadsdeel?.naam ? "block" : "none";
+        selectionMatch = l.stadsdeel === currentStadsdeel?.naam;
+      }
+
+      if (typeIsVisible && showLabels && selectionMatch) {
+        el.style.display = "block";
       } else {
         el.style.display = "none";
       }
@@ -309,7 +320,7 @@
     }
   });
 
-  let isInitializing = false;
+  let isInitializing = $state(false);
 
   const lightStyle =
     "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
@@ -331,6 +342,7 @@
       style: mode.current === "dark" ? darkStyle : lightStyle,
       center: [4.9041, 52.3676],
       zoom: 11,
+      minZoom: 9,
     });
 
     async function setupMapLayers() {
@@ -386,14 +398,14 @@
           id: "stadsdelen-fill",
           type: "fill",
           source: "stadsdelen",
-          paint: { "fill-color": "#00aa00", "fill-opacity": 0.1 },
+          paint: { "fill-color": "#008800", "fill-opacity": 0.1 },
         });
 
         map!.addLayer({
           id: "stadsdelen-outline",
           type: "line",
           source: "stadsdelen",
-          paint: { "line-color": "#00aa00", "line-width": 1.5 },
+          paint: { "line-color": "#008800", "line-width": 1.5 },
         });
 
         map!.addLayer({
@@ -454,7 +466,7 @@
               "#ffffff",
             ],
             "circle-stroke-width": 3,
-            "circle-stroke-color": "#ffffffbb",
+            "circle-stroke-color": "#ddddddbb",
             "circle-opacity": [
               "case",
               ["boolean", ["feature-state", "hovered"], false],
@@ -471,7 +483,7 @@
             paint: {
               "background-color":
                 mode.current === "dark" ? "#000000" : "#ffffff",
-              "background-opacity": 0.5,
+              "background-opacity": mode.current === "dark" ? 0.5 : 0.33,
             },
           },
           "stadsdelen-fill",
@@ -481,6 +493,7 @@
         addLocationMarkers();
       } finally {
         isInitializing = false;
+        mapLoaded = true;
       }
     }
 
@@ -545,12 +558,17 @@
     });
 
     map!.on("click", (e) => {
-      const locaties = map!.queryRenderedFeatures(e.point, {
+      const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
+        [e.point.x - 5, e.point.y - 5],
+        [e.point.x + 5, e.point.y + 5],
+      ];
+
+      const clickedLocaties = map!.queryRenderedFeatures(bbox, {
         layers: ["locatie-circles"],
       });
 
-      if (locaties.length > 0) {
-        const feature = locaties[0];
+      if (clickedLocaties.length > 0) {
+        const feature = clickedLocaties[0];
         const id = feature.properties?.id ?? feature.id;
 
         if (id !== undefined && id !== null) {
@@ -561,22 +579,18 @@
         }
       }
 
-      const stadsdelen = map!.queryRenderedFeatures(e.point, {
+      const clickedStadsdelen = map!.queryRenderedFeatures(e.point, {
         layers: ["stadsdelen-fill"],
       });
 
-      if (stadsdelen.length > 0) {
-        const id = stadsdelen[0].id;
-        if (id !== undefined) {
-          selectedStadsdeelId = id as number;
-          selectedLocatieId = null;
-          updateHighlightSource();
-          return;
-        }
+      if (clickedStadsdelen.length > 0) {
+        const id = clickedStadsdelen[0].id;
+        selectedStadsdeelId = id as number;
+        selectedLocatieId = null;
+      } else {
+        selectedLocatieId = null;
+        selectedStadsdeelId = null;
       }
-
-      selectedLocatieId = null;
-      selectedStadsdeelId = null;
       updateHighlightSource();
     });
 
@@ -620,7 +634,10 @@
 
 <div class="max-w-[1200px] mx-auto">
   <Card class="m-4 sm:m-8 p-0 relative">
-    <div bind:this={mapContainer} class="w-full h-[600px] rounded-lg"></div>
+    <div
+      bind:this={mapContainer}
+      class="w-full h-[400px] sm:h-[600px] rounded-lg"
+    ></div>
     <div
       class="absolute bottom-4 left-4 bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md"
     >
@@ -630,17 +647,20 @@
           ></Checkbox>
           <span style:color="#44ff44">--</span>
           {locale === "nl" ? `Stadsdelen` : `Districts`}
+          ({stadsdelen.length})
         </li>
         <li class="p-0.5">
           <Checkbox bind:checked={showScholen} class="inline mr-2"></Checkbox>
           <span style:color="#ff4444">●</span>
           {locale === "nl" ? `Scholen` : `Schools`}
+          ({locaties.filter((l) => l.type === "school").length})
         </li>
         <li class="p-0.5">
           <Checkbox bind:checked={showBibliotheken} class="inline mr-2"
           ></Checkbox>
           <span style:color="#4444ff">●</span>
           {locale === "nl" ? `Bibliotheken` : `Libraries`}
+          ({locaties.filter((l) => l.type === "bibliotheek").length})
         </li>
       </ul>
     </div>
@@ -849,7 +869,7 @@
 
 <footer class="bg-gray-500/10 p-6 text-center">
   <h3>
-    <b>Talenkaart Amsterdam</b>, Universiteit van Amsterdam, 2025.
+    © <b>Talenkaart Amsterdam</b>, Universiteit van Amsterdam, 2025.
   </h3>
   <br />
   Data verzameld via enquetes op scholen en in stadsdelen in Amsterdam. Respondenten
@@ -865,7 +885,6 @@
   >
     CC BY 4.0
   </a>
-  · © 2025, Universiteit van Amsterdam
 </footer>
 
 <style>
