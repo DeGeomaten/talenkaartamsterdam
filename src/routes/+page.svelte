@@ -714,7 +714,7 @@
             <li class="p-1">
               <Checkbox
                 bind:checked={languageFilters.proficient}
-                class="inline relative top-[1px]"
+                class="inline "
               />
               <span style:opacity={languageFilters.proficient ? 1 : 0.5}
                 >{locale === "nl" ? `vloeiend 💯` : `fluent 💯`}</span
@@ -729,7 +729,7 @@
             <li class="p-1">
               <Checkbox
                 bind:checked={languageFilters.homeLanguage}
-                class="inline relative top-[1px]"
+                class="inline"
               />
               <span style:opacity={languageFilters.homeLanguage ? 1 : 0.5}
                 >{locale === "nl" ? `thuis 🏠` : `at home 🏠`}</span
@@ -812,7 +812,7 @@
 
             <li class="p-2 odd:bg-gray-500/10 rounded-lg">
               <Checkbox
-                class="inline mr-1 relative top-[1px]"
+                class="inline mr-1"
                 bind:checked={languageSelected[code]}
               />
               <span
