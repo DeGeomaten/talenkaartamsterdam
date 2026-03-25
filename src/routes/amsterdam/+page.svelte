@@ -21,6 +21,7 @@
     type RespondentLanguage,
     type Locatie,
   } from "$lib/data/loadRespondents";
+  import { slide } from "svelte/transition";
 
   type Stadsdeel = {
     id: number;
@@ -104,16 +105,17 @@
     return acc;
   });
 
-  let sortedLangs = $derived.by(() => {
-    const { occ } = languageOccurences;
-    return Object.entries(occ)
+  const sortedLangs = $derived(
+    Object.entries(languageOccurences)
       .filter(
         ([, o]) =>
           (!languageFilters.homeLanguage || o.homeLanguage > 0) &&
           (!languageFilters.proficient || o.proficient > 0),
       )
-      .sort((a, b) => b[1].total - a[1].total);
-  });
+      .sort((a, b) => b[1].total - a[1].total),
+  );
+
+  $effect(() => console.log(sortedLangs));
 
   let selectedStadsdeel = $derived(
     stadsdelen.find((s) => s.id == selectedStadsdeelId),
@@ -641,7 +643,33 @@
     };
   });
 
-  let showLangStatistics = $state(true);
+  let openLanguage = $state(null);
+
+  $effect(() => {
+    const currentLangs = sortedLangs;
+
+    if (currentLangs.length > 0) {
+      openLanguage = currentLangs[0][0];
+    } else {
+      openLanguage = null;
+    }
+  });
+
+  function toggleLangStatistics(code, e) {
+    if (openLanguage === code) {
+      openLanguage = null;
+    } else {
+      openLanguage = code;
+
+      const li = e.currentTarget.closest("li");
+      setTimeout(() => {
+        li?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }, 50);
+    }
+  }
 </script>
 
 <ModeWatcher />
@@ -862,9 +890,7 @@
           {/if}
         </div>
         <ul>
-          {#each Object.entries(languageOccurences)
-            .filter(([, o]) => (!languageFilters.homeLanguage || o.homeLanguage > 0) && (!languageFilters.proficient || o.proficient > 0))
-            .sort((a, b) => b[1].total - a[1].total) as [code, o]}
+          {#each sortedLangs as [code, o]}
             {@const count = languageFilters.homeLanguage
               ? o.homeLanguage
               : languageFilters.proficient
@@ -883,7 +909,7 @@
                 />
                 <span
                   class="underline cursor-pointer"
-                  onclick={() => (showLangStatistics = !showLangStatistics)}
+                  onclick={(e) => toggleLangStatistics(code, e)}
                   >{locale === "nl"
                     ? languageNames[code].nameNL
                     : languageNames[code].nameEN},</span
@@ -901,8 +927,11 @@
                 </span>
               </div>
 
-              {#if showLangStatistics}
-                <ul class="text-[13px] text-gray-500 mt-1 ml-4">
+              {#if openLanguage === code}
+                <ul
+                  transition:slide
+                  class="text-[13px] text-gray-500 mt-1 ml-4"
+                >
                   {#if !languageFilters.homeLanguage && !languageFilters.proficient}
                     <li>
                       {locale === "nl" ? `Vloeiend` : `Fluent`}
