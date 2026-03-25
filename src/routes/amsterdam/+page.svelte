@@ -647,10 +647,13 @@
 <ModeWatcher />
 
 <header
-  class="flex items-center justify-between h-16 px-6 pt-8 pb-8 border-b border-gray-300 dark:border-gray-700 overflow-visible"
+  class="flex items-center justify-between h-16 px-4 sm:px-6 pt-8 pb-8 border-b border-gray-300 dark:border-gray-700 overflow-visible"
 >
   <div class="flex items-center">
-    <img src="talenkaart_logo.svg" class="size-8 inline mr-4 dark:opacity-75" />
+    <img
+      src="talenkaart_logo.svg"
+      class="size-6 sm:size-8 inline mr-3 sm:mr-4 dark:opacity-75"
+    />
     <h1 class="inline font-[800] text-[13px] sm:text-[15px]">
       {(locale === "nl"
         ? "Talenkaart Amsterdam"
@@ -681,11 +684,11 @@
   <Card class="m-4 sm:m-8 p-0 relative">
     <div
       bind:this={mapContainer}
-      class="w-full h-[400px] md:h-[600px] rounded-lg"
+      class="w-full h-[400px] sm:h-[40vh] rounded-lg"
       style="touch-action: manipulation;"
     ></div>
     <div
-      class="absolute bottom-4 left-4 bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md"
+      class="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white dark:bg-gray-800 p-2 rounded-[8px] sm:rounded-[6px] shadow-md"
     >
       <ul class="text-[13px] font-[600] text-gray-700 dark:text-gray-300">
         <li class="p-0.5">
@@ -725,8 +728,8 @@
         {#if !selectedStadsdeelId && !selectedLocatieId}
           <span class="opacity-50 text-lg"
             >&rarr; {locale === "nl"
-              ? `Selecteer een stadsdeel of locatie op de kaart...`
-              : `Select a district or location on the map...`}</span
+              ? `Selecteer een stadsdeel of een locatie op de kaart...`
+              : `Select a district or a location on the map...`}</span
           >
         {/if}
         {#if selectedStadsdeelId}
