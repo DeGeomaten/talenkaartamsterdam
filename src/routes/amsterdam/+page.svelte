@@ -364,6 +364,10 @@
       zoom: 10.5,
       minZoom: 9,
       attributionControl: false,
+      maxBounds: [
+        [4.25, 52.15],
+        [5.55, 52.55],
+      ],
     });
 
     map.addControl(
