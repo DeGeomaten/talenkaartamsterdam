@@ -909,28 +909,44 @@
   {/if}
 </div>
 
-<footer class="bg-gray-500/10 p-6 text-center">
+<footer class="bg-gray-500/10 p-6 text-center text-sm sm:text-base">
   <h3>
     © <b
-      >{locale == "nl" ? `Talenkaart Amsterdam` : `Language Map Amsterdam`}</b
+      >{locale === "nl" ? `Talenkaart Amsterdam` : `Language Map Amsterdam`}</b
     >,
-    {locale == "nl" ? `Universiteit van Amsterdam` : `University of Amsterdam`},
-    2025.
+    {locale === "nl"
+      ? `Universiteit van Amsterdam`
+      : `University of Amsterdam`}, 2025.
   </h3>
   <br />
-  Data verzameld via enquêtes op scholen en in stadsdelen in Amsterdam. Respondenten
-  zijn anoniem; er worden geen persoonsgegevens opgeslagen.
-  <br /><br />
-  <a class="underline" href="https://github.com/talenkaart/talenkaartamsterdam"
-    >GitHub repository &rarr;</a
-  >
+
+  <p class="max-w-2xl mx-auto opacity-80">
+    {locale === "nl"
+      ? "Data verzameld via enquêtes op scholen en in stadsdelen in Amsterdam. Respondenten zijn anoniem; er worden geen persoonsgegevens opgeslagen."
+      : "Data collected through surveys at schools and in districts across Amsterdam. Respondents are anonymous; no personal data is stored."}
+  </p>
+
   <br />
-  <a
-    class="underline"
-    href="https://creativecommons.org/licenses/by/4.0/deed.nl"
-  >
-    CC BY 4.0
-  </a>
+
+  <div class="flex flex-col gap-2">
+    <a
+      class="underline hover:opacity-70 transition-opacity"
+      href="https://github.com/talenkaart/talenkaartamsterdam"
+    >
+      GitHub repository &rarr;
+    </a>
+
+    <a
+      class="underline hover:opacity-70 transition-opacity"
+      href={locale === "nl"
+        ? "https://creativecommons.org/licenses/by/4.0/deed.nl"
+        : "https://creativecommons.org/licenses/by/4.0/"}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      CC BY 4.0
+    </a>
+  </div>
 </footer>
 
 <style>
