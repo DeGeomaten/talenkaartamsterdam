@@ -566,9 +566,12 @@
     });
 
     map!.on("click", (e) => {
+      const isMobile = window.innerWidth < 768;
+      const p = isMobile ? 20 : 5;
+
       const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
-        [e.point.x - 5, e.point.y - 5],
-        [e.point.x + 5, e.point.y + 5],
+        [e.point.x - p, e.point.y - p],
+        [e.point.x + p, e.point.y + p],
       ];
 
       const clickedLocaties = map!.queryRenderedFeatures(bbox, {
@@ -578,7 +581,6 @@
       if (clickedLocaties.length > 0) {
         const feature = clickedLocaties[0];
         const id = feature.properties?.id ?? feature.id;
-
         if (id !== undefined && id !== null) {
           selectedLocatieId = Number(id);
           selectedStadsdeelId = null;
@@ -593,21 +595,18 @@
 
       if (clickedStadsdelen.length > 0) {
         const newId = clickedStadsdelen[0].id as number;
-
         if (selectedStadsdeelId === newId) {
           selectedStadsdeelId = null;
         } else {
           selectedStadsdeelId = newId;
           selectedLocatieId = null;
         }
-
         updateHighlightSource();
-        return;
+      } else {
+        selectedLocatieId = null;
+        selectedStadsdeelId = null;
+        updateHighlightSource();
       }
-
-      selectedLocatieId = null;
-      selectedStadsdeelId = null;
-      updateHighlightSource();
     });
 
     return () => {
@@ -720,7 +719,9 @@
       {/if}
 
       {#if filteredRes.length == 0}
-        <p class="opacity-50">Geen data over dit gebied...</p>
+        <p class="opacity-50">
+          {locale == "nl" ? `Geen gegevens gevonden...` : `No data found...`}
+        </p>
       {:else}
         <div>
           {@html locale === "nl"
@@ -813,7 +814,9 @@
             {/if}
           </div>
         {:else}
-          <div class="bg-gray-500/10 p-2 text-sm text-gray-300 rounded-lg">
+          <div
+            class="bg-gray-500/10 p-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg"
+          >
             {locale == "nl"
               ? `Selecteer één of meerdere van de onderstaande talen om te zien hoeveel ondervraagden
             deze combinatie spreken.`
@@ -889,6 +892,13 @@
                       </li>
                     {/each}
                   {/if}
+                  <li>
+                    <a
+                      href={`https://en.wikipedia.org/wiki/ISO_639:${code}`}
+                      class="underline text-sm text-gray-700 dark:text-gray-300"
+                      >{locale == "nl" ? "Op" : "On"} Wikipedia &rarr;</a
+                    >
+                  </li>
                 </ul>
               {/if}
             </li>
@@ -901,7 +911,11 @@
 
 <footer class="bg-gray-500/10 p-6 text-center">
   <h3>
-    © <b>Talenkaart Amsterdam</b>, Universiteit van Amsterdam, 2025.
+    © <b
+      >{locale == "nl" ? `Talenkaart Amsterdam` : `Language Map Amsterdam`}</b
+    >,
+    {locale == "nl" ? `Universiteit van Amsterdam` : `University of Amsterdam`},
+    2025.
   </h3>
   <br />
   Data verzameld via enquêtes op scholen en in stadsdelen in Amsterdam. Respondenten
