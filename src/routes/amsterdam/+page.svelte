@@ -58,7 +58,7 @@
     return f;
   });
 
-  let [languageOccurences, languageNames, languageSelected] = $derived.by(
+  let [languageOccurrences, languageNames, languageSelected] = $derived.by(
     () => {
       const occ = {};
       const names = {};
@@ -66,14 +66,19 @@
 
       for (const r of filteredRes) {
         for (const l of r.languages) {
-          if (!occ[l.code]) {
-            occ[l.code] = { total: 0, homeLanguage: 0, proficient: 0 };
-            names[l.code] = { nameNL: l.nameNL, nameEN: l.nameEN };
-            selected[l.code] = false;
+          const matchesHome = !languageFilters.homeLanguage || l.homeLanguage;
+          const matchesProficient = !languageFilters.proficient || l.proficient;
+
+          if (matchesHome && matchesProficient) {
+            if (!occ[l.code]) {
+              occ[l.code] = { count: 0, homeLanguage: 0, proficient: 0 };
+              names[l.code] = { nameNL: l.nameNL, nameEN: l.nameEN };
+              selected[l.code] = false;
+            }
+            occ[l.code].count++;
+            if (l.homeLanguage) occ[l.code].homeLanguage++;
+            if (l.proficient) occ[l.code].proficient++;
           }
-          occ[l.code].total++;
-          if (l.homeLanguage) occ[l.code].homeLanguage++;
-          if (l.proficient) occ[l.code].proficient++;
         }
       }
       return [occ, names, selected];
@@ -106,16 +111,8 @@
   });
 
   const sortedLangs = $derived(
-    Object.entries(languageOccurences)
-      .filter(
-        ([, o]) =>
-          (!languageFilters.homeLanguage || o.homeLanguage > 0) &&
-          (!languageFilters.proficient || o.proficient > 0),
-      )
-      .sort((a, b) => b[1].total - a[1].total),
+    Object.entries(languageOccurrences).sort((a, b) => b[1].count - a[1].count),
   );
-
-  $effect(() => console.log(sortedLangs));
 
   let selectedStadsdeel = $derived(
     stadsdelen.find((s) => s.id == selectedStadsdeelId),
@@ -891,11 +888,7 @@
         </div>
         <ul>
           {#each sortedLangs as [code, o]}
-            {@const count = languageFilters.homeLanguage
-              ? o.homeLanguage
-              : languageFilters.proficient
-                ? o.proficient
-                : o.total}
+            {@const count = o.count}
 
             {@const topCooc = Object.entries(cooccurrences[code] ?? {})
               .sort((a, b) => b[1] - a[1])
@@ -936,14 +929,14 @@
                     <li>
                       {locale === "nl" ? `Vloeiend` : `Fluent`}
                       ({o.proficient}x) ({(
-                        (o.proficient / o.total) *
+                        (o.proficient / o.count) *
                         100
                       ).toFixed(1)}%)
                     </li>
                     <li>
                       {locale === "nl" ? `Thuistaal` : `Home language`}
                       ({o.homeLanguage}x) ({(
-                        (o.homeLanguage / o.total) *
+                        (o.homeLanguage / o.count) *
                         100
                       ).toFixed(1)}%)
                     </li>
