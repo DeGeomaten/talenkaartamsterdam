@@ -1020,6 +1020,12 @@
       GitHub repository &rarr;
     </a>
 
+    <a href="https://degeomaten.nl" class="underline"
+      >{locale == "nl"
+        ? `Ontwikkeld door De Geomaten`
+        : `Developed by De Geomaten`}</a
+    >
+
     <a
       class="underline hover:opacity-70 transition-opacity"
       href={locale === "nl"
