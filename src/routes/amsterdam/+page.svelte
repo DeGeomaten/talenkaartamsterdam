@@ -385,7 +385,7 @@
         const data = await loadData();
         respondents = data.respondents;
         locaties = data.locations;
-        const locations = data.locations;
+        const locations = data.locations.toReversed();
 
         const res = await fetch("./stadsdelen.json");
         const geojson: GeoJSON.FeatureCollection = await res.json();
@@ -483,8 +483,8 @@
             "circle-radius": [
               "case",
               ["boolean", ["feature-state", "hovered"], false],
-              8,
-              5,
+              7,
+              4,
             ],
             "circle-color": [
               "match",
@@ -498,7 +498,8 @@
               "#ffffff",
             ],
             "circle-stroke-width": 3,
-            "circle-stroke-color": "#ddddddbb",
+            "circle-stroke-color":
+              mode.current === "dark" ? "#55885533" : "#55885533",
             "circle-opacity": [
               "case",
               ["boolean", ["feature-state", "hovered"], false],
