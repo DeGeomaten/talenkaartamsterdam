@@ -20,9 +20,9 @@ export type RespondentLanguage = {
     code: string;
     nameNL: string;
     nameEN: string;
-    proficient: boolean;
-    basic: boolean;
-    homeLanguage: boolean;
+    properties: {
+        [key: string]: boolean;
+    }
 }
 
 export async function loadData(locale: "nl" | "en" = "nl") {
@@ -51,6 +51,13 @@ export async function loadData(locale: "nl" | "en" = "nl") {
     const respondentenSheet = XLSX.utils.sheet_to_json<any[]>(workbook.Sheets["Respondenten"], { header: 1 });
     const [header, ...rows] = respondentenSheet;
 
+    const talenPropertyRows = Object.fromEntries(header
+        .map((h, i) => [h, i] as [string, number])
+        .filter(h => h[0].toLowerCase().includes("talen") && !h[0].toLowerCase().includes("alle"))
+        .map(h => [h[0].toLowerCase().replace('talen (', '').slice(0, -1), h[1]]));
+
+    const talenPropertiesActive = Object.fromEntries(Object.keys(talenPropertyRows).map(i => [i, false]));
+
     const respondents: Respondent[] = rows
         .filter((row, index) => {
             const locationName = row[0];
@@ -65,13 +72,28 @@ export async function loadData(locale: "nl" | "en" = "nl") {
             const stadsdeel = row[1];
             const postcode = row[2] || "";
 
-            const vloeiend = (row[3] || "").split(",").map((s: string) => s.trim()).filter(Boolean);
-            const basis = (row[4] || "").split(",").map((s: string) => s.trim()).filter(Boolean);
-            const thuis = (row[5] || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+            const alleTalenIndex = header.findIndex(h => h.toLowerCase().includes("talen") && h.toLowerCase().includes("alle"));
+            const alle = (row[alleTalenIndex] || "").split(",").map((s: string) => s.trim()).filter(Boolean);
 
-            const alleTalen = Array.from(new Set([...vloeiend, ...thuis, ...basis]));
+            for (let prop in talenPropertyRows) {
+                const talenInRow = (row[talenPropertyRows[prop]] || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+                if (talenInRow.length) talenPropertiesActive[prop] = true;
+                for (let taal of talenInRow) {
+                    if (!alle.includes(taal)) {
+                        console.warn(`Respondent #${index + 2}: Taal '${taal}' staat niet in "Alle talen" kolom`);
+                        alle.push(taal);
+                    }
+                }
+            }
 
-            const languages: RespondentLanguage[] = alleTalen
+            const uniekeTalen = Array.from(new Set(alle));
+            if (uniekeTalen.length < alle.length) {
+                const duplicates = alle.filter((t: string, i: number) => alle.indexOf(t) !== i);
+                console.warn(`Respondent #${index + 2}: Dubbele talen gevonden en verwijderd in "Alle talen": ${duplicates.join(", ")}`);
+            }
+
+
+            const languages: RespondentLanguage[] = uniekeTalen
                 .filter(code => {
                     if (!talenMap.has(code)) {
                         console.warn(`Respondent #${index + 2}: Taal niet gevonden: ${code}`);
@@ -81,13 +103,17 @@ export async function loadData(locale: "nl" | "en" = "nl") {
                 })
                 .map(code => {
                     const vertaling = talenMap.get(code);
+                    const props = {} as { [key: string]: boolean };
+                    for (let [prop, i] of Object.entries(talenPropertyRows)) {
+                        const talenInRow = (row[i] || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+                        props[prop] = talenInRow.includes(code);
+                    }
+
                     return {
                         code: code,
                         nameNL: vertaling?.nl || code,
                         nameEN: vertaling?.en || code,
-                        proficient: vloeiend.includes(code),
-                        homeLanguage: thuis.includes(code),
-                        basic: basis.includes(code)
+                        properties: props
                     };
                 });
 
@@ -100,5 +126,9 @@ export async function loadData(locale: "nl" | "en" = "nl") {
             };
         });
 
-    return { locations, respondents };
+    const languageFilters = Object.fromEntries(Object.keys(talenPropertiesActive)
+        .filter(prop => talenPropertiesActive[prop])
+        .map(prop => [prop, false]));
+
+    return { locations, respondents, languageFilters };
 }

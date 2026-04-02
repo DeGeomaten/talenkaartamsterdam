@@ -66,18 +66,22 @@
 
       for (const r of filteredRes) {
         for (const l of r.languages) {
-          const matchesHome = !languageFilters.homeLanguage || l.homeLanguage;
-          const matchesProficient = !languageFilters.proficient || l.proficient;
+          const matchesFilters = {};
+          for (let prop in languageFilters) {
+            matchesFilters[prop] = !languageFilters[prop] || l.properties[prop];
+          }
 
-          if (matchesHome && matchesProficient) {
+          if (Object.values(matchesFilters).every((i) => i)) {
             if (!occ[l.code]) {
-              occ[l.code] = { count: 0, homeLanguage: 0, proficient: 0 };
+              occ[l.code] = { count: 0 };
+              for (let prop in languageFilters) occ[l.code][prop] = 0;
               names[l.code] = { nameNL: l.nameNL, nameEN: l.nameEN };
               selected[l.code] = false;
             }
             occ[l.code].count++;
-            if (l.homeLanguage) occ[l.code].homeLanguage++;
-            if (l.proficient) occ[l.code].proficient++;
+            for (let prop in languageFilters) {
+              if (l.properties[prop]) occ[l.code][prop]++;
+            }
           }
         }
       }
@@ -89,10 +93,10 @@
     const acc = {};
     for (const r of filteredRes) {
       const codes = r.languages
-        .filter(
-          (l) =>
-            (!languageFilters.homeLanguage || l.homeLanguage) &&
-            (!languageFilters.proficient || l.proficient),
+        .filter((l) =>
+          Object.keys(languageFilters).every(
+            (prop) => !languageFilters[prop] || l.properties[prop],
+          ),
         )
         .map((l) => l.code);
 
@@ -131,10 +135,7 @@
   let locationMarkers = $state<maplibregl.Marker[]>([]);
   let stadsdeelMarkers = $state<maplibregl.Marker[]>([]);
 
-  let languageFilters = $state({
-    homeLanguage: false,
-    proficient: false,
-  });
+  let languageFilters = $state({});
 
   function clearMarkers() {
     locationMarkers.forEach((m) => m.remove());
@@ -385,6 +386,7 @@
         const data = await loadData();
         respondents = data.respondents;
         locaties = data.locations;
+        languageFilters = data.languageFilters;
         const locations = data.locations.toReversed();
 
         const res = await fetch("./stadsdelen.json");
@@ -800,30 +802,24 @@
             ${selectedLocatieId ? `at the location <span class="underline">${selectedLocatie.naam}</span>` : ``},
           the following languages are spoken`}
           <ul>
-            <li class="flex items-center gap-2 p-1">
-              <Checkbox
-                bind:checked={languageFilters.proficient}
-                class="inline "
-              />
-              <span style:opacity={languageFilters.proficient ? 1 : 0.5}
-                >{locale === "nl" ? `vloeiend 💯` : `fluent 💯`}</span
-              >
-              <span
-                style:opacity={languageFilters.homeLanguage &&
-                languageFilters.proficient
-                  ? 1
-                  : 0.5}>en/of</span
-              >
-            </li>
-            <li class="flex items-center gap-2 p-1">
-              <Checkbox
-                bind:checked={languageFilters.homeLanguage}
-                class="inline"
-              />
-              <span style:opacity={languageFilters.homeLanguage ? 1 : 0.5}
-                >{locale === "nl" ? `thuis 🏠` : `at home 🏠`}</span
-              >
-            </li>
+            {#each Object.keys(languageFilters) as filter, i}
+              {@const isLastFilter =
+                i >= Object.keys(languageFilters).length - 1}
+              <li class="flex items-center gap-2 p-1">
+                <Checkbox
+                  bind:checked={languageFilters[filter]}
+                  class="inline "
+                />
+                <span style:opacity={languageFilters[filter] ? 1 : 0.5}
+                  >{filter} {filter.includes("thuis") ? "🏠" : ""}</span
+                >
+                {#if !isLastFilter}
+                  <span style:opacity={languageFilters[filter] ? 1 : 0.5}
+                    >en/of</span
+                  >
+                {/if}
+              </li>
+            {/each}
           </ul>
           {#if locale == "nl"}
             gesproken:
@@ -841,12 +837,7 @@
             )}
             {@const langCombination = filteredRes.filter((r) =>
               langsSelected.every((code) =>
-                r.languages.some(
-                  (l) =>
-                    l.code === code &&
-                    (!languageFilters.homeLanguage || l.homeLanguage) &&
-                    (!languageFilters.proficient || l.proficient),
-                ),
+                r.languages.some((l) => l.code === code),
               ),
             )}
             <div class="bg-gray-500/10 p-2 rounded-lg">
@@ -933,7 +924,7 @@
                   transition:slide
                   class="text-[13px] text-gray-500 mt-1 ml-4"
                 >
-                  {#if !languageFilters.homeLanguage && !languageFilters.proficient}
+                  <!-- {#if !languageFilters.homeLanguage && !languageFilters.proficient}
                     <li>
                       {locale === "nl" ? `Vloeiend` : `Fluent`}
                       ({o.proficient}x) ({(
@@ -948,6 +939,17 @@
                         100
                       ).toFixed(1)}%)
                     </li>
+                  {/if} -->
+
+                  {#if Object.values(languageFilters).every((i) => !i)}
+                    {#each Object.keys(languageFilters) as filter}
+                      <li>
+                        {filter[0].toUpperCase() + filter.slice(1)}
+                        ({o[filter]}) ({((o[filter] / o.count) * 100).toFixed(
+                          1,
+                        )}%)
+                      </li>
+                    {/each}
                   {/if}
                   {#if topCooc.length > 0}
                     {#each topCooc as [coocCode, coocCount]}
